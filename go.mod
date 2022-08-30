@@ -1,3 +1,3 @@
-module github.com/gitsrc/ipfs-nosql-frame
+module github.com/IceFireDB/ipfs-nosql-frame
 
 go 1.17

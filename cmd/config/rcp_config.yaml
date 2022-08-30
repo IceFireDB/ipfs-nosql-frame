@@ -1,0 +1,116 @@
+#ServiceCar YAML c onfig file
+
+#针对网络流入进行拦截，外部网路入口
+traffic_inflow:
+  enable: false
+  bind_protocol_type: "http" #入口网络承载器，本地监听协议
+  bind_network: "tcp" #入口网络承载器，本地监听网络端口类型
+  bind_address: "127.0.0.1:7070" #入口网络承载器，本地监听网络地址
+  target_protocol_type: "http"
+  target_address: "ws-u9n9edozkafjd.qcloud-prod.oneitfarm.com:80"
+  target_dial_timeout: 200 #到服务提供Nginx的tcp拨号超时时间、单位：毫秒
+  target_keep_alive: 30 #到服务提供Nginx的keepalive超时
+  target_idle_conn_timeout: 20 #到服务提供Nginx的tcp连接的空闲超时时间
+  target_max_idle_conns_per_host: 50 #关键参数，到服务提供Nginx的连接池最大容量可以为多少
+
+#GateWay  configure
+gateway:
+  enable: false
+  protocol_type: "https"
+  target_address: "gateway.icorer.com:443" #特殊单词代表特殊含义 eg ：SYSENV:gateway_address (从环境变量中获取)
+  #target_address: "SYSENV:gateway_address" #gateway_address 为环境变量的key
+  target_dial_timeout: 5000 #到gateway的tcp拨号超时时间、单位：毫秒
+  target_keep_alive: 30 #到gateway的keepalive超时
+  target_idle_conn_timeout: 20 #到gateway的tcp连接的空闲超时时间
+  target_max_idle_conns_per_host: 5 #关键参数，到gateway的连接池最大容量可以为多少
+
+#ServiceCar L7 Net Config
+net-L7:
+  protocol_type: "resp" # HTTP or RESP
+  bind_network: "tcp" #TCP or UNIX
+  bind_address: "0.0.0.0:6381" #network bind address : tcp->IP-address, unix->FileURI
+
+#ServiceCar L5 Net Config - TCP or UNIX
+net-L5:
+  listen_uri: unix:/tmp/ServiceCar.sock
+  #listen_uri: tcp:127.0.0.1:6380
+
+#ServiceCar cluster Config
+redis-cluster:
+  enable: true
+  start_nodes: "LOG_REDIS_CLUSTER_NODES" #LOG_REDIS_CLUSTER_NODES 环境变量
+  conn_timeout: 5000
+  conn_read_timeout: 5000
+  conn_write_timeout: 5000
+  conn_alive_timeout: 200 #单位：秒
+  conn_pool_size: 250
+  slave_operate_rate: 0 #从节点承载读流量的 百分比 ： 0-> 从节点不承载任何读流量
+  cluster_update_heartbeat: 30 #redis 集群的状态更新心跳间隔：只针对读写分离开启的场景生效 : 最低5秒
+
+#ServiceCar 内存缓存相关参数
+memory-cache:
+  enable: false
+  max_items_count: 1024 #Cache最大存储的item数量
+  default_expiration: 180000 # 缓存kv默认过期时间 (单位：毫秒)
+  cleanup_interval: 120 #cache内存清理周期（单位：秒）
+
+#ServiceCar Debug option
+debug:
+  enable: false
+  pprof_uri: "127.0.0.1:6060"
+
+app_info:
+  app_name: "Redis_Cluster_Proxy"
+  app_id: "IDG_APPID"
+  app_version: ""
+  app_key: ""
+  channel: ""
+  sub_org_key: ""
+  language: "ch"
+  site_id: "IDG_SITEUID"
+  cluster_id: "IDG_CLUSTERUID"
+
+log:
+  output: "stdout" #日志输出途径 ： redis、stdout
+  debug: false
+  key: "rcp_log" # 日志key
+  sc_log_num: 10 # 针对sc_log日志key的稀释数量
+  redis-cluster: #日志所连接的redis集群
+    enable: true
+    start_nodes: "LOG_REDIS_CLUSTER_NODES" #LOG_REDIS_CLUSTER_NODES
+    conn_timeout: 5000
+    conn_read_timeout: 5000
+    conn_write_timeout: 5000
+    conn_alive_timeout: 200 #单位：秒
+    conn_pool_size: 20
+    slave_operate_rate: 0 #从节点承载读流量的 百分比 ： 0-> 从节点不承载任何读流量
+    cluster_update_heartbeat: 30 #redis 集群的状态更新心跳间隔：只针对读写分离开启的场景生效 : 最低5秒
+
+msp: # MSP平台设置
+  base_url: "MSP_HTTP_BASE_URL" #MSP_HTTP_BASE_URI :http://192.168.2.97:8081
+
+filter: #日志过滤器设置
+  enable: true #
+  rule_data_url_path: "/api/v1/log_platform/sidecar/log_key_list"
+  rule_http_request_timeout: 5 #rule数据接口请求超时时间
+  rule_update_heart_beat: 2 #数据更新时效 单位秒
+
+influxdb: #只是使用了influxdb的客户端和配置信息，实际后方已经替换成victoriaMetrics
+  enable: true
+  address: "INFLUXDB_ADDRESS" #192.168.2.80:80
+  port: 80
+  udp_address: "INFLUXDB_UDP_ADDRESS" #influxdb msp数据库的udp地址，ip:port
+  database: "INFLUXDB_DATABASES" # 数据库名称
+  precision: "ms" #精度 n, u, ms, s, m or h
+  username: "INFLUXDB_USERNAME"
+  password: "INFLUXDB_PASSWORD"
+  max-idle-conns: 30
+  max-idle-conns-per-host: 30
+
+rate_limiter:
+  redis_cluster_nodes: "LOG_RATE_LIMITER_NODES" #RATE_LIMITER_NODES 环境变量
+
+ca_config:
+  enable: false # MSP_CA_ENABLE 是否开启ca连接，默认关闭
+  auth_key: "MSP_CA_AUTH_KEY"
+  address: "MSP_CA_ADDRESS" # ca中心地址：https://domain
